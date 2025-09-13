@@ -1,0 +1,56 @@
+# Node.js
+node_modules/
+npm-debug.log*
+.env
+.DS_Store
+*.log
+*.tgz
+*.zip
+*.rar
+*.7z
+/coverage
+/build
+/dist
+/tmp
+/temp
+/logs
+/pids
+/runs
+/uploads
+/public/build
+/public/dist
+/public/uploads
+/public/temp
+/public/tmp
+/public/logs
+/public/pids
+/public/runs
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.*
+!/.env.example
+
+# Test and coverage reports
+/coverage
+/test-results
+/junit.xml
+
+# Compiled output
+/dist
+/build
+
+# Editor-specific files
+*.swp
+*.bak
+*~
