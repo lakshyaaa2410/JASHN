@@ -1,37 +1,42 @@
-const moongose = require("mongoose");
+const mongoose = require("mongoose");
 
-const artistSchema = new moongose.Schema(
+const artistSchema = new mongoose.Schema(
 	{
 		user: {
-			type: moongose.Schema.Types.ObjectId,
+			type: mongoose.Schema.Types.ObjectId,
 			ref: "User",
 			required: true,
+			unique: true,
 		},
 		stageName: {
 			type: String,
 			required: [true, "Stage name is required"],
 			trim: true,
-			minlength: [2, "Must be at least 2 characters"],
-			maxlength: [20, "Must be less than 20 characters"],
+			minlength: [2, "Minimum 2 characters"],
+			maxlength: [30, "Maximum 30 characters"],
 		},
 		bio: {
 			type: String,
 			trim: true,
-			maxlength: [500, "Must be less than 500 characters"],
+			maxlength: [500, "Bio cannot exceed 500 characters"],
 		},
 		location: {
 			type: String,
 			trim: true,
-			maxlength: [50, "Must be less than 50 characters"],
+			maxlength: [100, "Location must be under 100 characters"],
 		},
 		socialLinks: {
 			instagram: { type: String, trim: true },
 			youtube: { type: String, trim: true },
 			spotify: { type: String, trim: true },
+			other: { type: String, trim: true },
 		},
-		profileImage: { type: String },
+		profileImage: {
+			type: String,
+			default: "default-artist.png",
+		},
 	},
 	{ timestamps: true }
 );
 
-module.exports = moongose.model("Artist", artistSchema);
+module.exports = mongoose.model("Artist", artistSchema);
