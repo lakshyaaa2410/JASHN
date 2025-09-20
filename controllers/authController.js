@@ -100,6 +100,9 @@ exports.login = async function (req, res) {
 			});
 		}
 
+		user.isActive = true;
+		await user.save({ validateBeforeSave: false });
+
 		authUtilities.createAndSendToken(user, HTTPStatusCode.OK, res);
 	} catch (err) {
 		return res.status(HTTPStatusCode.INTERNAL_SERVER_ERROR).json({
@@ -108,6 +111,8 @@ exports.login = async function (req, res) {
 		});
 	}
 };
+
+exports.logout = async function (req, res) {};
 
 exports.createArtistProfile = async function (req, res) {
 	try {

@@ -1,9 +1,11 @@
 const express = require("express");
 const { connectDB } = require("./database/connection");
+const cookieParser = require("cookie-parser");
 
 const artistRoutes = require("./routes/artistRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const cors = require("cors");
 const morgan = require("morgan");
@@ -15,6 +17,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
+app.use(cookieParser());
 
 // MongoDB connection.
 connectDB();
@@ -24,6 +27,7 @@ connectDB();
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users/", userRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 app.listen(process.env.PORT, () => {
 	console.log(`Jashn server started on port ${process.env.PORT}`);

@@ -13,6 +13,13 @@ const generateToken = function (id) {
 exports.createAndSendToken = function (user, statusCode, res) {
 	const token = generateToken(user._id);
 
+	const cookieOptions = {
+		httpOnly: true,
+		secure: false,
+		maxAge: 1 * 24 * 60 * 60 * 1000, // 1 Day
+	};
+
+	res.cookie("jwt", token, cookieOptions);
 	user.password = undefined;
 
 	return res.status(statusCode).json({
