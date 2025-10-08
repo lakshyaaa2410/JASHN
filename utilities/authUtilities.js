@@ -16,7 +16,9 @@ exports.createAndSendToken = function (user, statusCode, res) {
 	const cookieOptions = {
 		httpOnly: true,
 		secure: false,
+		sameSite: "Strict",
 		maxAge: 1 * 24 * 60 * 60 * 1000, // 1 Day
+		path: "/",
 	};
 
 	res.cookie("jwt", token, cookieOptions);

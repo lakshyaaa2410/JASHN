@@ -7,11 +7,13 @@ const authMiddleware = require("../middlewares/authMiddleware");
 router.route("/register").post(authController.register);
 router.route("/verify-otp").post(authController.OTPVerification);
 router.route("/login").post(authController.login);
+router.route("/logout").post(authController.logout);
 
-router.post(
-	"/artist/completeProfile",
-	authMiddleware.protect,
-	authMiddleware.restrictTo("artist"),
-	authController.createArtistProfile
-);
 module.exports = router;
+
+// TODO: Endpoints
+
+// 1. /reset-password
+// 2. /forgot-password
+// 3. /update-password
+// 4. /logout -- Done

@@ -5,9 +5,9 @@ const userController = require("../controllers/userController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
 router.get(
-	"/me",
+	"/getMe",
 	authMiddleware.protect,
-	authMiddleware.restrictTo("user"),
+	authMiddleware.restrictTo("user", "admin"),
 	userController.getMe
 );
 
@@ -19,3 +19,7 @@ router.post(
 );
 
 module.exports = router;
+
+// TODO: Endpoints
+// 1. /updateMe
+// 2. /bookings

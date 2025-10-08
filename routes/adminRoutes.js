@@ -11,4 +11,18 @@ router.get(
 	adminController.getUsersByStatus
 );
 
+router.get(
+	"/getAllUsers",
+	authMiddleware.protect,
+	authMiddleware.restrictTo("admin"),
+	adminController.getAllUsers
+);
+
+router.get(
+	"/getAllArtists",
+	authMiddleware.protect,
+	authMiddleware.restrictTo("admin"),
+	adminController.getAllArtists
+);
+
 module.exports = router;

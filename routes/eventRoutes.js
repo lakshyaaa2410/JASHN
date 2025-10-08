@@ -1,14 +1,14 @@
 const express = require("express");
 const router = express.Router();
 
-const artistController = require("../controllers/artistController");
+const eventController = require("../controllers/eventController");
 const authMiddleware = require("../middlewares/authMiddleware");
 
 router.post(
-	"/completeProfile",
+	"/addEvent",
 	authMiddleware.protect,
 	authMiddleware.restrictTo("artist"),
-	artistController.createArtistProfile
+	eventController.addEvent
 );
 
 module.exports = router;

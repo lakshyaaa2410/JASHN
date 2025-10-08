@@ -3,6 +3,8 @@ const { promisify } = require("util");
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
 
+const { getRedisClient } = require("../database/redisClient");
+
 exports.protect = async function (req, res, next) {
 	try {
 		// let token;
@@ -18,6 +20,17 @@ exports.protect = async function (req, res, next) {
 			return res.status(HTTPStatusCode.UNAUTHORIZED).json({
 				status: "failed",
 				message: "You are not logged in, Please try again",
+			});
+		}
+
+		// 1. Checking If The Token Is Blacklisted
+		const redisClient = getRedisClient();
+		const isBlacklisted = await redisClient.get(`blacklist:${token}`);
+
+		if (isBlacklisted) {
+			return res.status(HTTPStatusCode.UNAUTHORIZED).json({
+				status: "failed",
+				message: "Invalid Or Expired Token, Please Login Again",
 			});
 		}
 

@@ -29,3 +29,35 @@ exports.getUsersByStatus = async function (req, res) {
 		});
 	}
 };
+
+exports.getAllUsers = async function (req, res) {
+	try {
+		const users = await User.find({ role: "user" });
+		return res.status(HTTPStatusCode.OK).json({
+			status: "success",
+			length: users.length,
+			data: users,
+		});
+	} catch (err) {
+		return res.status(HTTPStatusCode.BAD_GATEWAY).json({
+			status: "failed",
+			message: err.message,
+		});
+	}
+};
+
+exports.getAllArtists = async function (req, res) {
+	try {
+		const artists = await Artist.find().populate("user");
+		return res.status(HTTPStatusCode.OK).json({
+			status: "success",
+			length: artists.length,
+			data: artists,
+		});
+	} catch (err) {
+		return res.status(HTTPStatusCode.BAD_GATEWAY).json({
+			status: "failed",
+			message: err.message,
+		});
+	}
+};

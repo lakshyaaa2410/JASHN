@@ -1,202 +1,177 @@
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
+const Event = require("../models/eventModel"); // adjust the path if necessary
 
-const User = require("../models/userModel");
-const Artist = require("../models/artistModel");
-const Event = require("../models/eventModel");
-
-let mongoServer;
-
-beforeAll(async () => {
-	mongoServer = await MongoMemoryServer.create();
-	await mongoose.connect(mongoServer.getUri());
-});
-
-afterAll(async () => {
-	await mongoose.disconnect();
-	await mongoServer.stop();
-});
-
-afterEach(async () => {
-	await User.deleteMany();
-	await Artist.deleteMany();
-	await Event.deleteMany();
-});
-
-describe("Event model validation", () => {
-	const validUserData = {
-		firstName: "John",
-		lastName: "Doe",
-		email: "john@example.com",
-		password: "password123",
-		passwordConfirm: "password123",
-	};
-
-	const validArtistData = {
-		stageName: "DJ Test",
-		user: null, // will be set after creating User
-	};
-
-	it("should require title", async () => {
-		const user = await User.create(validUserData);
-		const artist = await Artist.create({
-			...validArtistData,
-			user: user._id,
+describe("Event Model Test Suite", () => {
+	beforeAll(async () => {
+		await mongoose.connect("mongodb://127.0.0.1:27017/testDB", {
+			useNewUrlParser: true,
+			useUnifiedTopology: true,
 		});
-
-		const event = new Event({
-			date: new Date(),
-			location: "New York",
-			type: "show",
-			createdBy: artist._id,
-		});
-
-		await expect(event.save()).rejects.toThrow(/event title is required/i);
 	});
 
-	it("should enforce title max length", async () => {
-		const user = await User.create(validUserData);
-		const artist = await Artist.create({
-			...validArtistData,
-			user: user._id,
-		});
-
-		const event = new Event({
-			title: "A".repeat(101),
-			date: new Date(),
-			location: "New York",
-			type: "show",
-			createdBy: artist._id,
-		});
-
-		await expect(event.save()).rejects.toThrow(
-			/title must be less than 100 characters/i
-		);
+	afterAll(async () => {
+		await mongoose.connection.db.dropDatabase();
+		await mongoose.connection.close();
 	});
 
-	it("should enforce description max length", async () => {
-		const user = await User.create(validUserData);
-		const artist = await Artist.create({
-			...validArtistData,
-			user: user._id,
-		});
+	let validEventData;
 
-		const event = new Event({
-			title: "Cool Event",
-			description: "A".repeat(1001),
-			date: new Date(),
-			location: "New York",
-			type: "show",
-			createdBy: artist._id,
-		});
-
-		await expect(event.save()).rejects.toThrow(/description too long/i);
-	});
-
-	it("should require date", async () => {
-		const user = await User.create(validUserData);
-		const artist = await Artist.create({
-			...validArtistData,
-			user: user._id,
-		});
-
-		const event = new Event({
-			title: "Cool Event",
-			location: "New York",
-			type: "show",
-			createdBy: artist._id,
-		});
-
-		await expect(event.save()).rejects.toThrow(/event date is required/i);
-	});
-
-	it("should require location", async () => {
-		const user = await User.create(validUserData);
-		const artist = await Artist.create({
-			...validArtistData,
-			user: user._id,
-		});
-
-		const event = new Event({
-			title: "Cool Event",
-			date: new Date(),
-			type: "show",
-			createdBy: artist._id,
-		});
-
-		await expect(event.save()).rejects.toThrow(/location is required/i);
-	});
-
-	it("should require type", async () => {
-		const user = await User.create(validUserData);
-		const artist = await Artist.create({
-			...validArtistData,
-			user: user._id,
-		});
-
-		const event = new Event({
-			title: "Cool Event",
-			date: new Date(),
-			location: "New York",
-			createdBy: artist._id,
-		});
-
-		// missing type → required validation
-		await expect(event.save()).rejects.toThrow(/event type is required/i);
-	});
-
-	it("should enforce type enum", async () => {
-		const user = await User.create(validUserData);
-		const artist = await Artist.create({
-			...validArtistData,
-			user: user._id,
-		});
-
-		const event = new Event({
-			title: "Cool Event",
-			date: new Date(),
-			location: "New York",
-			type: "party", // invalid enum
-			createdBy: artist._id,
-		});
-
-		await expect(event.save()).rejects.toThrow(
-			/is not a valid enum value/i
-		);
-	});
-
-	it("should require createdBy", async () => {
-		const event = new Event({
-			title: "Cool Event",
-			date: new Date(),
-			location: "New York",
-			type: "show",
-		});
-
-		await expect(event.save()).rejects.toThrow(/createdby.*required/i);
-	});
-
-	it("should save successfully with valid data and participants", async () => {
-		const user1 = await User.create(validUserData);
-		const user2 = await User.create({
-			...validUserData,
-			email: "user2@example.com",
-		});
-		const artist = await Artist.create({
-			...validArtistData,
-			user: user1._id,
-		});
-
-		const event = new Event({
-			title: "Cool Event",
+	beforeEach(() => {
+		// Base valid event data
+		validEventData = {
+			title: "Awesome Event",
 			description: "This is an amazing event",
+			artist: new mongoose.Types.ObjectId(),
+			type: "cypher",
+			genre: "Hip-Hop",
+			location: "Main Hall",
+			city: "Jodhpur",
+			poster: "",
 			date: new Date(),
-			location: "New York",
-			type: "show",
-			createdBy: artist._id,
-			participants: [user1._id, user2._id],
-		});
+			time: { hours: 18, minutes: 30 },
+			duration: 120,
+			capacity: 100,
+			isCompleted: false,
+			attendees: [],
+		};
+	});
 
-		await expect(event.save()).resolves.toBeDefined();
+	test("should create an event successfully with valid data", async () => {
+		const event = new Event(validEventData);
+		const savedEvent = await event.save();
+		expect(savedEvent._id).toBeDefined();
+		expect(savedEvent.title).toBe(validEventData.title);
+	});
+
+	// Title tests
+	test("should fail if title is missing", async () => {
+		delete validEventData.title;
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(/Event title is required/);
+	});
+
+	test("should fail if title is too short", async () => {
+		validEventData.title = "Hi";
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(
+			/Title must be at least 3 characters/
+		);
+	});
+
+	test("should fail if title is too long", async () => {
+		validEventData.title = "a".repeat(101);
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(
+			/Title must be less than 100 characters/
+		);
+	});
+
+	// Description tests
+	test("should fail if description is too long", async () => {
+		validEventData.description = "a".repeat(501);
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(/Description is too long/);
+	});
+
+	// Artist tests
+	test("should fail if artist is missing", async () => {
+		delete validEventData.artist;
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(
+			/Event must belong to an artist/
+		);
+	});
+
+	// Type tests
+	test("should fail if type is missing", async () => {
+		delete validEventData.type;
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(/Event type is required/);
+	});
+
+	test("should fail if type is invalid", async () => {
+		validEventData.type = "party";
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(
+			/`party` is not a valid enum value/
+		);
+	});
+
+	// Location tests
+	test("should fail if location is missing", async () => {
+		delete validEventData.location;
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(/Location is required/);
+	});
+
+	// City tests
+	test("should fail if city is missing", async () => {
+		delete validEventData.city;
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(/City is required/);
+	});
+
+	// Date tests
+	test("should fail if date is missing", async () => {
+		delete validEventData.date;
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(/Event date is required/);
+	});
+
+	// Time tests
+	test("should fail if hours are missing", async () => {
+		delete validEventData.time.hours;
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(/Event hours are required/);
+	});
+
+	test("should fail if hours are out of range", async () => {
+		validEventData.time.hours = 25;
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(
+			/Hours must be between 0 and 23/
+		);
+	});
+
+	test("should fail if minutes are missing", async () => {
+		delete validEventData.time.minutes;
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(
+			/Event minutes are required/
+		);
+	});
+
+	test("should fail if minutes are out of range", async () => {
+		validEventData.time.minutes = 65;
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(
+			/Minutes must be between 0 and 59/
+		);
+	});
+
+	// Duration tests
+	test("should fail if duration is missing", async () => {
+		delete validEventData.duration;
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(
+			/Event duration is required/
+		);
+	});
+
+	// Capacity tests
+	test("should fail if capacity is missing", async () => {
+		delete validEventData.capacity;
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(
+			/Event capacity is required/
+		);
+	});
+
+	test("should fail if capacity < 1", async () => {
+		validEventData.capacity = 0;
+		const event = new Event(validEventData);
+		await expect(event.save()).rejects.toThrow(
+			/Capacity must be at least 1/
+		);
 	});
 });

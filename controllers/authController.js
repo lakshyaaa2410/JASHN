@@ -1,8 +1,9 @@
 const User = require("../models/userModel");
-const Artist = require("../models/artistModel");
 
 const { HTTPStatusCode } = require("../utilities/httpCodes");
 const authUtilities = require("../utilities/authUtilities");
+const { getRedisClient } = require("../database/redisClient");
+const jwt = require("jsonwebtoken");
 
 exports.register = async function (req, res) {
 	try {
@@ -112,35 +113,35 @@ exports.login = async function (req, res) {
 	}
 };
 
-exports.logout = async function (req, res) {};
-
-exports.createArtistProfile = async function (req, res) {
+exports.logout = async function (req, res) {
 	try {
-		const user = await User.findById(req.user._id);
-		if (!user || user.role !== "artist" || !user.isVerified) {
-			return res.status(HTTPStatusCode.FORBIDDEN).json({
-				status: "failed",
-				message: "Not authorized or user not verified.",
-			});
-		}
+		const token = req.cookies.jwt;
+		const decodedToken = jwt.decode(token);
+		const expireTime = decodedToken.exp - Math.floor(Date.now() / 1000);
 
-		const artist = await Artist.create({
-			user: user._id,
-			stageName: req.body.stageName,
-			bio: req.body.bio || "",
-			location: req.body.location || "",
-			socialLinks: req.body.socialLinks || {},
-			profileImage: req.body.profileImage || "",
+		const redisClient = getRedisClient();
+
+		await redisClient.set(`blacklist:${token}`, "true", {
+			EX: expireTime,
 		});
 
-		return res.status(HTTPStatusCode.CREATED).json({
+		res.clearCookie("jwt", {
+			httpOnly: true,
+			secure: false,
+			sameSite: "Strict",
+			path: "/",
+		});
+
+		req.user = null;
+
+		return res.status(HTTPStatusCode.OK).json({
 			status: "success",
-			data: artist,
+			message: "User Logged Out",
 		});
-	} catch (err) {
-		return res.status(HTTPStatusCode.INTERNAL_SERVER_ERROR).json({
+	} catch (error) {
+		return res.status(HTTPStatusCode.BAD_GATEWAY).json({
 			status: "failed",
-			message: err.message,
+			message: error.message,
 		});
 	}
 };
