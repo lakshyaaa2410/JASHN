@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const otpGenerator = require("otp-generator");
 const { sendMail } = require("../utilities/sendMail");
+const crypto = require("crypto");
 
 const generateToken = function (id) {
 	var token = jwt.sign({ id }, process.env.JWT_STRING, {
@@ -9,6 +10,7 @@ const generateToken = function (id) {
 
 	return token;
 };
+
 
 exports.createAndSendToken = function (user, statusCode, res) {
 	const token = generateToken(user._id);
@@ -52,3 +54,4 @@ exports.createAndSendOTP = async function (newUser) {
 	};
 	await sendMail(options);
 };
+

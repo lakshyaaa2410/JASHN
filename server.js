@@ -23,7 +23,7 @@ app.use(cookieParser());
 
 // MongoDB connection.
 connectDB();
-connectRedis();
+// connectRedis();
 
 // Routing
 

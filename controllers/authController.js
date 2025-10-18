@@ -4,6 +4,8 @@ const { HTTPStatusCode } = require("../utilities/httpCodes");
 const authUtilities = require("../utilities/authUtilities");
 const { getRedisClient } = require("../database/redisClient");
 const jwt = require("jsonwebtoken");
+const { sendMail } = require("../utilities/sendMail");
+const crypto = require("crypto");
 
 exports.register = async function (req, res) {
 	try {
@@ -137,6 +139,59 @@ exports.logout = async function (req, res) {
 		return res.status(HTTPStatusCode.OK).json({
 			status: "success",
 			message: "User Logged Out",
+		});
+	} catch (error) {
+		return res.status(HTTPStatusCode.BAD_GATEWAY).json({
+			status: "failed",
+			message: error.message,
+		});
+	}
+};
+
+exports.resetPassword = async function (req, res) {
+	const { email } = req.body;
+
+	try {
+		if (!email) {
+			return res.status(HTTPStatusCode.BAD_REQUEST).json({
+				status: "failed",
+				message: "Please Enter An Email",
+			});
+		}
+
+		const existingUser = await User.findOne({ email });
+		if (!existingUser) {
+			return res.status(HTTPStatusCode.INTERNAL_SERVER_ERROR).json({
+				status: "failed",
+				message: "Something Went Wrong, Please Try Again",
+			});
+		}
+
+		const newToken = crypto.randomBytes(32).toString("hex");
+		const hashedToken = crypto
+			.createHash("sha256")
+			.update(newToken)
+			.digest("hex");
+
+		existingUser.resetPasswordToken = hashedToken;
+		existingUser.resetPasswordExpire = Date.now() + 5 * 60 * 1000;
+
+		await existingUser.save({ validateBeforeSave: false });
+
+		const resetLink = `${req.protocol}://${req.get(
+			"host"
+		)}/reset-password?token=${newToken}&email=${email}`;
+
+		const options = {
+			email: email,
+			subject: "Jashn - Password Reset",
+			html: `<h1>Follow This Link To Reset Your Password.</h1><br><b>${resetLink}</b>`,
+		};
+		await sendMail(options);
+
+		return res.status(HTTPStatusCode.OK).json({
+			status: "success",
+			message: "Password reset link has been sent to your email.",
 		});
 	} catch (error) {
 		return res.status(HTTPStatusCode.BAD_GATEWAY).json({
