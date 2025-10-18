@@ -16,4 +16,5 @@ module.exports = router;
 // 1. /reset-password
 // 2. /forgot-password
 // 3. /update-password
+
 // 4. /logout -- Done

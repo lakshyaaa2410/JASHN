@@ -1,9 +1,9 @@
 const { HTTPStatusCode } = require("../utilities/httpCodes");
 const { promisify } = require("util");
+const { getRedisClient } = require("../database/redisClient");
+
 const jwt = require("jsonwebtoken");
 const User = require("../models/userModel");
-
-const { getRedisClient } = require("../database/redisClient");
 
 exports.protect = async function (req, res, next) {
 	try {
