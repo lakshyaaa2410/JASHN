@@ -11,6 +11,7 @@ const eventRoutes = require("./routes/eventRoutes");
 
 const cors = require("cors");
 const morgan = require("morgan");
+const rateLimiter = require("express-rate-limit");
 
 require("dotenv").config();
 const app = express();
@@ -20,6 +21,14 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cookieParser());
+
+const rateLimitOptions = rateLimiter({
+	windowMs: 60 * 60 * 1000,
+	max: 3,
+	message: "Too Many Requests, Please Try Again",
+});
+
+app.use(rateLimitOptions);
 
 // MongoDB connection.
 connectDB();
