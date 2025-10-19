@@ -9,11 +9,10 @@ router.route("/verify-otp").post(authController.OTPVerification);
 router.route("/login").post(authController.login);
 router.route("/logout").post(authController.logout);
 
-router.route("/reset-password").post(authController.resetPassword);
+router.route("/forgot-password").post(authController.forgotPassword);
 module.exports = router;
 
 // TODO: Endpoints
 
-// 1. /reset-password
 // 2. /forgot-password
 // 3. /update-password

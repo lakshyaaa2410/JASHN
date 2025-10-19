@@ -11,7 +11,6 @@ const generateToken = function (id) {
 	return token;
 };
 
-
 exports.createAndSendToken = function (user, statusCode, res) {
 	const token = generateToken(user._id);
 
@@ -54,4 +53,3 @@ exports.createAndSendOTP = async function (newUser) {
 	};
 	await sendMail(options);
 };
-

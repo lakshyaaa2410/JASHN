@@ -148,39 +148,32 @@ exports.logout = async function (req, res) {
 	}
 };
 
-exports.resetPassword = async function (req, res) {
+exports.forgotPassword = async function (req, res) {
 	const { email } = req.body;
 
-	try {
-		if (!email) {
-			return res.status(HTTPStatusCode.BAD_REQUEST).json({
-				status: "failed",
-				message: "Please Enter An Email",
-			});
-		}
+	if (!email) {
+		return res.status(HTTPStatusCode.BAD_REQUEST).json({
+			status: "failed",
+			message: "Please Enter An Email",
+		});
+	}
 
+	try {
 		const existingUser = await User.findOne({ email });
 		if (!existingUser) {
-			return res.status(HTTPStatusCode.INTERNAL_SERVER_ERROR).json({
-				status: "failed",
-				message: "Something Went Wrong, Please Try Again",
+			return res.status(HTTPStatusCode.OK).json({
+				status: "success",
+				message:
+					"If an account with this email exists, a reset link has been sent.",
 			});
 		}
 
-		const newToken = crypto.randomBytes(32).toString("hex");
-		const hashedToken = crypto
-			.createHash("sha256")
-			.update(newToken)
-			.digest("hex");
-
-		existingUser.resetPasswordToken = hashedToken;
-		existingUser.resetPasswordExpire = Date.now() + 5 * 60 * 1000;
-
+		const resetToken = existingUser.createPasswordResetToken();
 		await existingUser.save({ validateBeforeSave: false });
 
 		const resetLink = `${req.protocol}://${req.get(
 			"host"
-		)}/reset-password?token=${newToken}&email=${email}`;
+		)}/reset-password?token=${resetToken}`;
 
 		const options = {
 			email: email,
