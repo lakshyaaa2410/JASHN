@@ -24,7 +24,7 @@ app.use(cookieParser());
 
 const rateLimitOptions = rateLimiter({
 	windowMs: 60 * 60 * 1000,
-	max: 3,
+	max: 10,
 	message: "Too Many Requests, Please Try Again",
 });
 
@@ -32,7 +32,7 @@ app.use(rateLimitOptions);
 
 // MongoDB connection.
 connectDB();
-// connectRedis();
+connectRedis();
 
 // Routing
 

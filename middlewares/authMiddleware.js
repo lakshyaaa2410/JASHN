@@ -14,7 +14,6 @@ exports.protect = async function (req, res, next) {
 		// ) {
 		// 	token = req.headers.authorization.split(" ")[1];
 		// }
-
 		const token = req.cookies?.jwt;
 		if (!token) {
 			return res.status(HTTPStatusCode.UNAUTHORIZED).json({
@@ -40,11 +39,13 @@ exports.protect = async function (req, res, next) {
 			process.env.JWT_STRING
 		);
 
-		const freshUser = await User.findById(decodedPayload.id);
+		const freshUser = await User.findById(decodedPayload.id).select(
+			"+password"
+		);
 		if (!freshUser) {
 			return res.status(HTTPStatusCode.UNAUTHORIZED).json({
 				status: "failed",
-				message: "The user belonging to this token does not exsists",
+				message: "The User Belonging To This Token Does Not Exsists",
 			});
 		}
 

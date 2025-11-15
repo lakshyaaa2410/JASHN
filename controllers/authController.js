@@ -164,7 +164,7 @@ exports.forgotPassword = async function (req, res) {
 			return res.status(HTTPStatusCode.OK).json({
 				status: "success",
 				message:
-					"If an account with this email exists, a reset link has been sent.",
+					"If An Account With This Email Exists, A Reset Link Has Been Sent.",
 			});
 		}
 
@@ -187,6 +187,95 @@ exports.forgotPassword = async function (req, res) {
 			message: "Password reset link has been sent to your email.",
 		});
 	} catch (error) {
+		return res.status(HTTPStatusCode.BAD_GATEWAY).json({
+			status: "failed",
+			message: error.message,
+		});
+	}
+};
+
+exports.resetPassword = async function (req, res) {
+	const { token } = req.query;
+
+	if (!token) {
+		return res.status(HTTPStatusCode.BAD_REQUEST).json({
+			status: "failed",
+			message: "No Valid Token Found",
+		});
+	}
+
+	try {
+		const hashedToken = crypto
+			.createHash("sha256")
+			.update(token)
+			.digest("base64");
+
+		const user = await User.findOne({
+			resetPasswordToken: hashedToken,
+			resetPasswordExpire: { $gt: Date.now() },
+		});
+
+		if (!user) {
+			return res.status(HTTPStatusCode.INTERNAL_SERVER_ERROR).json({
+				status: "failed",
+				message: "Token Invalid Or Expired, Please Try Again",
+			});
+		}
+
+		user.password = req.body.password;
+		user.passwordConfirm = req.body.passwordConfirm;
+
+		user.resetPasswordToken = undefined;
+		user.resetPasswordExpire = undefined;
+
+		await user.save();
+		authUtilities.createAndSendToken(user, 200, res);
+	} catch (error) {
+		return res.status(HTTPStatusCode.BAD_GATEWAY).json({
+			status: "failed",
+			message: error.message,
+		});
+	}
+};
+
+exports.updatePassword = async function (req, res) {
+	const { currentPassword, newPassword, confirmPassword } = req.body;
+
+	if (!currentPassword || !newPassword || !confirmPassword) {
+		return res.status(HTTPStatusCode.BAD_REQUEST).json({
+			status: "failed",
+			message: "Please Enter Current, New, Confirm Password",
+		});
+	}
+	try {
+		const user = req.user;
+		const isCurrentPasswordCorrect = await user.comparePassword(
+			currentPassword
+		);
+
+		if (!isCurrentPasswordCorrect) {
+			return res.status(HTTPStatusCode.UNAUTHORIZED).json({
+				status: "failed",
+				message: "Current Passwords Do Not Match, Try Again",
+			});
+		}
+
+		if (currentPassword === newPassword) {
+			return res.status(400).json({
+				status: "failed",
+				message: "New Password Must Be Different From Current Password",
+			});
+		}
+
+		user.password = newPassword;
+		user.passwordConfirm = confirmPassword;
+
+		await user.save();
+
+		authUtilities.createAndSendToken(user, 200, res);
+	} catch (error) {
+		console.log(error);
+
 		return res.status(HTTPStatusCode.BAD_GATEWAY).json({
 			status: "failed",
 			message: error.message,
